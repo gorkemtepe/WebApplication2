@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NETCore.Encrypt.Extensions;
 using System.Security.Claims;
@@ -8,6 +9,7 @@ using WebApplication2.Models;
 
 namespace WebApplication2.Controllers
 {
+    [Authorize]
     public class AccountController : Controller
     {
         private readonly DatabaseContext _databaseContext;
@@ -19,10 +21,13 @@ namespace WebApplication2.Controllers
             _configuration = configuration;
         }
 
+        [AllowAnonymous]
         public IActionResult Login()
         {
             return View();
         }
+
+        [AllowAnonymous]
         [HttpPost]
         public IActionResult Login(LoginViewModel model)
         {
@@ -35,7 +40,7 @@ namespace WebApplication2.Controllers
                 User user = _databaseContext.Users.SingleOrDefault(x => x.Username.ToLower() == model.Username.ToLower()
                 && x.Password == hashedPassword);
 
-                if(user != null)
+                if (user != null)
                 {
                     if (user.Locked)
                     {
@@ -43,11 +48,12 @@ namespace WebApplication2.Controllers
                         return View(model);
                     }
                     List<Claim> claims = new List<Claim>();
-                    claims.Add(new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()));
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
                     claims.Add(new Claim(ClaimTypes.Name, user.FullName ?? string.Empty));
+                    claims.Add(new Claim(ClaimTypes.Role, user.Role));
                     claims.Add(new Claim("Username", user.Username));
 
-                    ClaimsIdentity identity = new ClaimsIdentity(claims,CookieAuthenticationDefaults.AuthenticationScheme);
+                    ClaimsIdentity identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
                     ClaimsPrincipal principal = new ClaimsPrincipal(identity);
 
@@ -64,16 +70,21 @@ namespace WebApplication2.Controllers
 
             return View(model);
         }
+
+        [AllowAnonymous]
+
         public IActionResult Register()
         {
             return View();
         }
+
+        [AllowAnonymous]
         [HttpPost]
         public IActionResult Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
-                if(_databaseContext.Users.Any(x=>x.Username.ToLower()==model.Username.ToLower()))
+                if (_databaseContext.Users.Any(x => x.Username.ToLower() == model.Username.ToLower()))
                 {
                     ModelState.AddModelError(nameof(model.Username), "Bu kullanıcı adı zaten var.");
                     return View(model);
@@ -91,7 +102,7 @@ namespace WebApplication2.Controllers
                 _databaseContext.Users.Add(user);
                 int affectedRowCount = _databaseContext.SaveChanges();
 
-                if(affectedRowCount==0)
+                if (affectedRowCount == 0)
                 {
                     ModelState.AddModelError("", "Kullanıcı eklenemedi.");
                 }
@@ -102,9 +113,18 @@ namespace WebApplication2.Controllers
             }
             return View(model);
         }
+
         public IActionResult Profile()
         {
             return View();
         }
+
+        public IActionResult Logout()
+        {
+            HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
+        }
+        
+
     }
 }

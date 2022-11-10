@@ -26,7 +26,7 @@ namespace WebApplication2
                     opts.SlidingExpiration = false;
                     opts.LoginPath = "/Account/Login";
                     opts.LogoutPath = "/Account/Logout";
-                    opts.AccessDeniedPath = "/Home/AccesDenied";
+                    opts.AccessDeniedPath = "/Home/AccessDenied";
                 });
 
             var app = builder.Build();
@@ -37,9 +37,8 @@ namespace WebApplication2
                 app.UseExceptionHandler("/Home/Error");
             }
             app.UseStaticFiles();
-
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(

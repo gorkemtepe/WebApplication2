@@ -16,6 +16,10 @@ namespace WebApplication2.Entity
         public string Password { get; set; }
         public bool Locked { get; set; }=false;
         public DateTime CreateAt { get; set; } = DateTime.Now;
+
+        [Required]
+        [StringLength(50)]
+        public string Role { get; set; } = "user";
     }
 
 }
