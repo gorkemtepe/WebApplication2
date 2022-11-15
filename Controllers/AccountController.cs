@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NETCore.Encrypt.Extensions;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using WebApplication2.Entity;
 using WebApplication2.Models;
@@ -33,9 +34,7 @@ namespace WebApplication2.Controllers
         {
             if (ModelState.IsValid)
             {
-                string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
-                string saltedPassword = model.Password + md5Salt;
-                string hashedPassword = saltedPassword.MD5();
+                string hashedPassword = DoMD5HashedString(model.Password);
 
                 User user = _databaseContext.Users.SingleOrDefault(x => x.Username.ToLower() == model.Username.ToLower()
                 && x.Password == hashedPassword);
@@ -71,6 +70,14 @@ namespace WebApplication2.Controllers
             return View(model);
         }
 
+        private string DoMD5HashedString(string s)
+        {
+            string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
+            string salted= s + md5Salt;
+            string hashed= salted.MD5();
+            return hashed;
+        }
+
         [AllowAnonymous]
 
         public IActionResult Register()
@@ -90,9 +97,8 @@ namespace WebApplication2.Controllers
                     return View(model);
                 }
 
-                string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
-                string saltedPassword = model.Password + md5Salt;
-                string hashedPassword = saltedPassword.MD5();
+                string hashedPassword = DoMD5HashedString(model.Password);
+
                 //User user = new User()  AYNI ŞEY
                 User user = new()
                 {
@@ -116,7 +122,56 @@ namespace WebApplication2.Controllers
 
         public IActionResult Profile()
         {
+            ProfileInfoLoader();
+
             return View();
+        }
+
+        private void ProfileInfoLoader()
+        {
+            Guid userid = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            User user = _databaseContext.Users.SingleOrDefault(x => x.Id == userid);
+
+            ViewData["FullName"] = user.FullName;
+        }
+
+        [HttpPost]
+        public IActionResult ProfileChangeFullName([Required][StringLength(50)] string? fullname)
+        {
+            if (ModelState.IsValid)
+            {
+                Guid userid = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                User user = _databaseContext.Users.SingleOrDefault(x => x.Id == userid);
+
+                user.FullName = fullname;
+                _databaseContext.SaveChanges();
+
+                return RedirectToAction(nameof(Profile));
+            }
+
+            ProfileInfoLoader();
+            return View("Profile");
+        }
+
+        [HttpPost]
+        public IActionResult ProfileChangePassword([Required][MinLength(6)][MaxLength(16)] string? password)
+        {
+            if (ModelState.IsValid)
+            {
+                Guid userid = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                User user = _databaseContext.Users.SingleOrDefault(x => x.Id == userid);
+
+                string hashedPassword = DoMD5HashedString(password);
+
+
+                user.Password = hashedPassword;
+                _databaseContext.SaveChanges();
+
+                ViewData["result"] = "PasswordChanged";
+            }
+
+            ProfileInfoLoader();
+            return View("Profile");
         }
 
         public IActionResult Logout()
