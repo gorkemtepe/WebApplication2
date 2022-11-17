@@ -73,8 +73,8 @@ namespace WebApplication2.Controllers
         private string DoMD5HashedString(string s)
         {
             string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
-            string salted= s + md5Salt;
-            string hashed= salted.MD5();
+            string salted = s + md5Salt;
+            string hashed = salted.MD5();
             return hashed;
         }
 
@@ -133,6 +133,7 @@ namespace WebApplication2.Controllers
             User user = _databaseContext.Users.SingleOrDefault(x => x.Id == userid);
 
             ViewData["FullName"] = user.FullName;
+            ViewData["ProfileImage"] = user.ProfileImageFileName;
         }
 
         [HttpPost]
@@ -174,12 +175,40 @@ namespace WebApplication2.Controllers
             return View("Profile");
         }
 
+        [HttpPost]
+        public IActionResult ProfileChangeImage([Required] IFormFile file)
+        {
+            if (ModelState.IsValid)
+            {
+                Guid userid = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                User user = _databaseContext.Users.SingleOrDefault(x => x.Id == userid);
+
+                // p_guid.jpg
+
+                string fileName = $"p_{userid}.jpg";
+                Stream stream = new FileStream($"wwwroot/uploads/{fileName}", FileMode.OpenOrCreate);
+
+                file.CopyTo(stream);
+
+                stream.Close();
+                stream.Dispose();
+
+                user.ProfileImageFileName = fileName;
+                _databaseContext.SaveChanges();
+
+                return RedirectToAction(nameof(Profile));
+            }
+
+            ProfileInfoLoader();
+            return View("Profile");
+        }
+
         public IActionResult Logout()
         {
             HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction(nameof(Login));
         }
-        
+
 
     }
 }
