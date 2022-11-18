@@ -38,7 +38,7 @@
 
         <form method="post" asp-action="ProfileChangeFullName">
             <div class="form-group">
-                <label class="form-label small">Name Surname</label>
+                <label class="form-label small">Name Surname<span class="badge bg-danger ms-2">Required</span></label>
                 <div class="input-group mb-3">
                     <input name="fullname" type="text" class="form-control" placeholder="John Doe" value="@ViewData["FullName"]" />
                     <button class="btn btn-secondary" type="submit"><i class="fa-solid fa-floppy-disk me-2"></i>Save</button>
@@ -48,7 +48,7 @@
 
         <form method="post" asp-action="ProfileChangePassword">
             <div class="form-group">
-                <label class="form-label small">New Password</label>
+                <label class="form-label small">New Password<span class="badge bg-danger ms-2">Required</span></label>
                 <div class="input-group">
                     <input name="password" type="password" class="form-control" placeholder="Password!" />
                     <button class="btn btn-secondary" type="submit"><i class="fa-solid fa-floppy-disk me-2"></i>Save</button>

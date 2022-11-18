@@ -186,6 +186,8 @@ namespace WebApplication2.Controllers
                 // p_guid.jpg
 
                 string fileName = $"p_{userid}.jpg";
+                //string fileName = $"p_{userid}.{file.ContentType.Split('/')[1]}"; =======>>>>> DOSYA TÜRÜ BELİRTİLMEDİĞİ ZAMAM DOSYA ADINI BU ŞEKİLDE OLUŞTURURUZ
+
                 Stream stream = new FileStream($"wwwroot/uploads/{fileName}", FileMode.OpenOrCreate);
 
                 file.CopyTo(stream);
